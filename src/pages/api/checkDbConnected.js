@@ -1,4 +1,4 @@
-import dbConnect from "@/lib/mongoose";
+import dbConnect from "@/lib/mongodb";
 import mongoose from "mongoose";
 
 export default async function handler(req, res) {
