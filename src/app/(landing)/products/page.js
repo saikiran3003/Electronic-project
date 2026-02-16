@@ -1,29 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 export default function ProductsPage() {
   const router = useRouter();
   const [products, setProducts] = useState([]);
   const [status, setStatus] = useState("loading");
+  const [userName, setUserName] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortOrder, setSortOrder] = useState("");
 
   const fallbackImage = "/assets/images/tvimage.jpg";
 
   useEffect(() => {
+    const storedName = localStorage.getItem("userName");
+
+    if (storedName) {
+      setUserName(storedName);
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }, 400);
+    }
+
     let isMounted = true;
 
     const loadProducts = async () => {
       try {
         const res = await fetch("/api/products");
         const data = await res.json();
-
         if (!res.ok) throw new Error("Failed");
 
-        const productList = data.products || data;
-
         if (isMounted) {
-          setProducts(productList);
+          setProducts(data.products || data);
           setStatus("ready");
         }
       } catch {
@@ -35,122 +44,205 @@ export default function ProductsPage() {
     return () => (isMounted = false);
   }, []);
 
-  const handleBuyNow = () => {
-    // Redirect to login page if not authenticated
-    const isAuthenticated = localStorage.getItem("authToken"); // Check if user is authenticated
-    if (isAuthenticated) {
-      // If user is logged in, you can proceed with purchase (e.g., redirect to checkout)
-      router.push("/checkout");  // Checkout page (change this as per your setup)
-    } else {
-      // If user is not logged in, redirect to the login page (navbar login page)
-      router.push("/user/login");  // Navbar login page (adjust this path if needed)
-    }
+  const handleBuyNow = (product) => {
+    localStorage.setItem("selectedProduct", JSON.stringify(product));
+    const token = localStorage.getItem("token");
+
+    if (token) router.push("/checkout");
+    else router.push("/user/login");
   };
 
-  return (
-    <div style={{ padding: "40px 20px", background: "#f8f9fa" }}>
-      <h1 style={{ textAlign: "start", marginBottom: "30px", color: "black", fontWeight: "bold", fontSize: "24px" }}>
-        Our Products
-      </h1>
+  const filteredProducts = useMemo(() => {
+    let filtered = products.filter((product) =>
+      product.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-      {status === "loading" && <p>Loading...</p>}
+    if (sortOrder === "lowToHigh") {
+      filtered = [...filtered].sort((a, b) => a.price - b.price);
+    } else if (sortOrder === "highToLow") {
+      filtered = [...filtered].sort((a, b) => b.price - a.price);
+    }
+
+    return filtered;
+  }, [products, searchTerm, sortOrder]);
+
+  return (
+    <div
+      style={{
+        padding: "60px 30px",
+        background: "#f5f7fa",
+        minHeight: "100vh",
+      }}
+    >
+      <div
+        style={{
+          marginBottom: "40px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "15px",
+        }}
+      >
+        <div>
+          <h1 style={{ fontSize: "28px", fontWeight: "700" }}>
+            Our Products
+          </h1>
+          {userName && (
+            <p style={{ color: "#007bff" }}>
+              Welcome, {userName}
+            </p>
+          )}
+        </div>
+
+        <div style={{ display: "flex", gap: "15px" }}>
+          <input
+            type="text"
+            placeholder="Search products..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: "250px",
+              padding: "10px 14px",
+              borderRadius: "12px",
+              border: "2px solid #111",
+              outline: "none",
+            }}
+          />
+
+          <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            style={{
+              padding: "10px 14px",
+              borderRadius: "12px",
+              border: "2px solid #111",
+              cursor: "pointer",
+              background: "#fff",
+            }}
+          >
+            <option value="">Filters</option>
+            <option value="lowToHigh">Price: Low to High</option>
+            <option value="highToLow">Price: High to Low</option>
+          </select>
+        </div>
+      </div>
+
+      {status === "loading" && <p>Loading products...</p>}
       {status === "error" && <p style={{ color: "red" }}>Error loading</p>}
 
       {status === "ready" && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            gap: "25px",
-          }}
-        >
-          {products.map((product) => {
-            const imageSrc =
-              product.image &&
-                (product.image.startsWith("http") ||
-                  product.image.startsWith("/"))
-                ? product.image
-                : fallbackImage;
+        <>
+          {filteredProducts.length === 0 ? (
+            <p style={{ color: "gray" }}>No products found</p>
+          ) : (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, 300px)",
+                gap: "30px",
+                justifyContent: "center",
+              }}
+            >
+              {filteredProducts.map((product) => {
+                const imageSrc =
+                  product.image &&
+                  (product.image.startsWith("http") ||
+                    product.image.startsWith("/"))
+                    ? product.image
+                    : fallbackImage;
 
-            return (
-              <div
-                key={product._id}
-                style={{
-                  background: "#fff",
-                  padding: "18px",
-                  borderRadius: "12px",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                }}
-              >
-                {/* Image Wrapper */}
-                <div
-                  style={{
-                    overflow: "hidden",
-                    borderRadius: "10px",
-                  }}
-                >
-                  <div style={{ overflow: "hidden", borderRadius: "10px" }}>
-                    <img
-                      src={product.image || fallbackImage}
-                      alt={product.name}
-                      style={{
-                        width: "100%",
-                        height: "180px",
-                        objectFit: "contain",
-                        transition: "transform 0.4s ease",
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.3)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                    />
-                  </div>
-                </div>
-
-                <h2 style={{ marginTop: "15px", color: "black", fontWeight: "bold" }}>
-                  {product.name}
-                </h2>
-
-                <p style={{ fontSize: "14px", color: "black" }}>
-                  {product.description}
-                </p>
-
-                <div
-                  style={{
-                    marginTop: "15px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <span style={{ fontWeight: "bold" }}>
-                    ₹{product.price}
-                  </span>
-
-                  <button
-                    onClick={handleBuyNow}
+                return (
+                  <div
+                    key={product._id}
                     style={{
-                      backgroundColor: "#007bff",
-                      color: "#fff",
-                      border: "none",
-                      padding: "10px 16px",
-                      borderRadius: "6px",
-                      cursor: "pointer",
+                      width: "300px",
+                      background: "#fff",
+                      padding: "20px",
+                      borderRadius: "14px",
+                      boxShadow: "0 6px 16px rgba(0,0,0,0.08)",
                       transition: "0.3s",
                     }}
-                    onMouseEnter={(e) =>
-                      (e.target.style.backgroundColor = "#0056b3")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.target.style.backgroundColor = "#007bff")
-                    }
                   >
-                    Buy Now
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                    {/* IMAGE CONTAINER */}
+                    <div
+                      style={{
+                        overflow: "hidden",
+                        borderRadius: "12px",
+                      }}
+                    >
+                      <img
+                        src={imageSrc}
+                        alt={product.name}
+                        style={{
+                          width: "100%",
+                          height: "190px",
+                          objectFit: "contain",
+                          transition: "transform 0.4s ease",
+                          cursor: "pointer",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.transform =
+                            "scale(1.1) translateY(-5px)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.transform = "scale(1)")
+                        }
+                      />
+                    </div>
+
+                    <h2 style={{ marginTop: "16px" }}>
+                      {product.name}
+                    </h2>
+
+                    <p style={{ fontSize: "14px", color: "#555" }}>
+                      {product.description}
+                    </p>
+
+                    <div
+                      style={{
+                        marginTop: "18px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <span style={{ fontWeight: "700" }}>
+                        ₹{product.price}
+                      </span>
+
+                      <button
+                        onClick={() => handleBuyNow(product)}
+                        style={{
+                          backgroundColor: "#007bff",
+                          color: "#fff",
+                          border: "none",
+                          padding: "8px 16px",
+                          borderRadius: "8px",
+                          cursor: "pointer",
+                          transition: "0.3s",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#0056b3")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#007bff")
+                        }
+                      >
+                        Buy Now
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
+
+
+
+

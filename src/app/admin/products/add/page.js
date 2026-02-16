@@ -73,7 +73,7 @@ export default function AddProduct() {
             onChange={handleChange}
             required
             className="custom-file-input"
-            style={{ marginTop: "10px", marginBottom: "25px" }} // ✅ GAP ADDED HERE
+            style={{ marginTop: "10px", marginBottom: "25px", color: "black" }} // ✅ GAP ADDED HERE
           />
 
           <button type="submit" style={buttonStyle}>

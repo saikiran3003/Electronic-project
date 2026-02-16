@@ -23,13 +23,14 @@ export async function POST(req) {
             password,
         });
 
-        return NextResponse.json(
+        return Response.json(
             { message: "User created successfully", user: newUser },
             { status: 201 }
         );
     } catch (error) {
-        return NextResponse.json(
-            { message: "Error creating user" },
+        console.error("Signup API Error:", error);
+        return Response.json(
+            { message: "Error creating user", error: error.message },
             { status: 500 }
         );
     }

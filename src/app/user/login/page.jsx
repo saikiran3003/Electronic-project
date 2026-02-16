@@ -46,6 +46,8 @@ export default function AuthPage() {
       // ✅ If login success
       if (isLogin) {
         localStorage.setItem("token", data.token);
+        localStorage.setItem("userName", data.name);
+        localStorage.setItem("userEmail", data.email);
         alert("Login Successful");
         router.push("/products"); // 🔥 Redirect
       } else {
@@ -121,7 +123,8 @@ export default function AuthPage() {
           display: flex;
           justify-content: center;
           align-items: center;
-          background: linear-gradient(to right, #f4f4f5ff, #fefeffff);
+        
+          background: linear-gradient(to right, #930e0eff, #755e00ff);
         }
 
         .auth-box {
@@ -129,6 +132,7 @@ export default function AuthPage() {
           padding: 30px;
           background: white;
           border-radius: 12px;
+       
           box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
           text-align: center;
         }
@@ -140,6 +144,7 @@ export default function AuthPage() {
         .auth-box input {
           width: 100%;
           padding: 10px;
+          color: black;
           margin-bottom: 15px;
           border-radius: 6px;
           border: 1px solid #ccc;
@@ -175,7 +180,7 @@ export default function AuthPage() {
         }
 
         .auth-box button:hover {
-          background-color: #5a67d8;
+          background-color: #1625b5ff;
         }
 
         .toggle-text {
@@ -196,3 +201,5 @@ export default function AuthPage() {
     </>
   );
 }
+
+

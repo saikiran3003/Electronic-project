@@ -199,7 +199,7 @@ export default function AdminProducts() {
             onChange={(e) => setImageFile(e.target.files[0])}
             required
             className="custom-file-input"
-            style={{ marginBottom: "15px" }}
+            style={{ marginBottom: "15px", color: "black" }}
           />
         )}
 

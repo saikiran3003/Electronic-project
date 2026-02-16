@@ -38,10 +38,24 @@ export default function AuthPage() {
       if (res.ok) {
         alert(data.message || (isLogin ? "Login successful" : "Signup successful"));
 
+        // if (data.token) {
+        //   localStorage.setItem("token", data.token);
+        //   router.push("/admin");
+        // }
         if (data.token) {
           localStorage.setItem("token", data.token);
-          router.push("/admin");
+          localStorage.setItem("userName", data.name || data.email || "User");
+          localStorage.setItem("userEmail", data.email);
+
+          const selectedProduct = localStorage.getItem("selectedProduct");
+
+          if (selectedProduct) {
+            router.push("/checkout");
+          } else {
+            router.push("/products");
+          }
         }
+
 
         if (!isLogin) {
           setIsLogin(true); // Switch to login after successful signup
@@ -170,7 +184,7 @@ export default function AuthPage() {
         }
 
         button:hover {
-          background: #d01724;
+          background: #d01717ff;
         }
 
         button:disabled {
@@ -197,3 +211,6 @@ export default function AuthPage() {
     </div>
   );
 }
+
+
+
