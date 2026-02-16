@@ -44,7 +44,6 @@ export default function AdminProducts() {
       let res;
 
       if (editingId) {
-        // UPDATE
         res = await fetch("/api/products", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -56,7 +55,6 @@ export default function AdminProducts() {
           }),
         });
       } else {
-        // ADD
         const formData = new FormData();
         formData.append("name", name);
         formData.append("price", price);
@@ -88,9 +86,6 @@ export default function AdminProducts() {
     }
   };
 
-  // =========================
-  // EDIT PRODUCT
-  // =========================
   const handleEdit = (product) => {
     setEditingId(product._id);
     setName(product.name);
@@ -105,9 +100,6 @@ export default function AdminProducts() {
     }, 100);
   };
 
-  // =========================
-  // DELETE PRODUCT
-  // =========================
   const handleDelete = async (id) => {
     const confirmDelete = confirm("Are you sure you want to delete this product?");
     if (!confirmDelete) return;
@@ -116,11 +108,6 @@ export default function AdminProducts() {
       const res = await fetch(`/api/products/${id}`, {
         method: "DELETE",
       });
-
-      if (!res.ok) {
-        alert("Failed to delete product ❌");
-        return;
-      }
 
       const data = await res.json();
 
@@ -136,9 +123,6 @@ export default function AdminProducts() {
     }
   };
 
-  // =========================
-  // RESET FORM
-  // =========================
   const resetForm = () => {
     setEditingId(null);
     setName("");
@@ -151,8 +135,16 @@ export default function AdminProducts() {
   // UI
   // =========================
   return (
-    <div style={{ padding: "40px", background: "#f4f6f9", color: "#000", marginLeft: "220px", marginTop: "40px" }}>
-      <h1 style={{ marginBottom: "30px" }}>Admin - Manage Products</h1>
+    <div
+      style={{
+        padding: "40px",
+        background: "#f4f6f9",
+        color: "#000",
+        marginLeft: "220px",
+        marginTop: "40px",
+      }}
+    >
+      <h1 style={{ marginBottom: "30px", marginTop: "2px" }}>Admin - Manage Products</h1>
 
       {/* FORM */}
       <form
@@ -164,7 +156,7 @@ export default function AdminProducts() {
           padding: "25px",
           borderRadius: "12px",
           boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-          maxWidth: "500px",
+          maxWidth: "450px",
         }}
       >
         <h2 style={{ marginBottom: "15px" }}>
@@ -206,7 +198,8 @@ export default function AdminProducts() {
             type="file"
             onChange={(e) => setImageFile(e.target.files[0])}
             required
-            style={{ marginBottom: "12px" }}
+            className="custom-file-input"
+            style={{ marginBottom: "15px" }}
           />
         )}
 
@@ -270,17 +263,21 @@ export default function AdminProducts() {
                   width: "100%",
                   height: "180px",
                   objectFit: "contain",
-                  transition: "transform 0.4s ease",
+                  transition: "transform 0.4s",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.3)")}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.transform = "scale(1.3)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.transform = "scale(1)")
+                }
               />
             </div>
 
             <h3 style={{ marginTop: "12px" }}>{product.name}</h3>
-
-            <p style={{ fontSize: "14px", color: "#555" }}>{product.description}</p>
-
+            <p style={{ fontSize: "14px", color: "#555" }}>
+              {product.description}
+            </p>
             <strong style={{ fontSize: "16px" }}>₹{product.price}</strong>
 
             <div style={{ marginTop: "12px" }}>
@@ -316,6 +313,21 @@ export default function AdminProducts() {
           </div>
         ))}
       </div>
+
+      {/* ✅ REMOVE "No file chosen" TEXT */}
+      <style jsx>{`
+        .custom-file-input {
+          color: transparent;
+        }
+
+        .custom-file-input::-webkit-file-upload-button {
+          visibility: visible;
+        }
+
+        .custom-file-input::file-selector-button {
+          visibility: visible;
+        }
+      `}</style>
     </div>
   );
 }

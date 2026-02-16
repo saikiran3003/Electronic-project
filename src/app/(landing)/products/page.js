@@ -1,7 +1,10 @@
 "use client";
+
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function ProductsPage() {
+  const router = useRouter();
   const [products, setProducts] = useState([]);
   const [status, setStatus] = useState("loading");
 
@@ -15,9 +18,7 @@ export default function ProductsPage() {
         const res = await fetch("/api/products");
         const data = await res.json();
 
-        if (!res.ok) {
-          throw new Error("Failed to load products");
-        }
+        if (!res.ok) throw new Error("Failed");
 
         const productList = data.products || data;
 
@@ -25,59 +26,48 @@ export default function ProductsPage() {
           setProducts(productList);
           setStatus("ready");
         }
-      } catch (error) {
-        if (isMounted) {
-          setStatus("error");
-        }
+      } catch {
+        if (isMounted) setStatus("error");
       }
     };
 
     loadProducts();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => (isMounted = false);
   }, []);
 
-  const handleBuyNow = (product) => {
-    alert(`Buying: ${product.name}`);
+  const handleBuyNow = () => {
+    // Redirect to login page if not authenticated
+    const isAuthenticated = localStorage.getItem("authToken"); // Check if user is authenticated
+    if (isAuthenticated) {
+      // If user is logged in, you can proceed with purchase (e.g., redirect to checkout)
+      router.push("/checkout");  // Checkout page (change this as per your setup)
+    } else {
+      // If user is not logged in, redirect to the login page (navbar login page)
+      router.push("/user/login");  // Navbar login page (adjust this path if needed)
+    }
   };
 
   return (
-    <div style={{ padding: "40px", backgroundColor: "#f8f9fa" }}>
-
-      <h2
-        style={{
-          marginBottom: "30px",
-          fontSize: "28px",
-          fontWeight: "bold",
-          color: "#000",
-        }}
-      >
+    <div style={{ padding: "40px 20px", background: "#f8f9fa" }}>
+      <h1 style={{ textAlign: "start", marginBottom: "30px", color: "black", fontWeight: "bold", fontSize: "24px" }}>
         Our Products
-      </h2>
+      </h1>
 
-      {status === "loading" && <p>Loading products...</p>}
-      {status === "error" && (
-        <p style={{ color: "red" }}>Unable to load products.</p>
-      )}
-      {status === "ready" && products.length === 0 && (
-        <p>No products available yet.</p>
-      )}
+      {status === "loading" && <p>Loading...</p>}
+      {status === "error" && <p style={{ color: "red" }}>Error loading</p>}
 
-      {status === "ready" && products.length > 0 && (
+      {status === "ready" && (
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
             gap: "25px",
           }}
         >
           {products.map((product) => {
             const imageSrc =
               product.image &&
-                (product.image.startsWith("http://") ||
-                  product.image.startsWith("https://") ||
+                (product.image.startsWith("http") ||
                   product.image.startsWith("/"))
                 ? product.image
                 : fallbackImage;
@@ -86,61 +76,40 @@ export default function ProductsPage() {
               <div
                 key={product._id}
                 style={{
-                  backgroundColor: "#ffffff",
-                  borderRadius: "12px",
+                  background: "#fff",
                   padding: "18px",
+                  borderRadius: "12px",
                   boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                 }}
               >
-                {/* IMAGE WRAPPER */}
+                {/* Image Wrapper */}
                 <div
                   style={{
                     overflow: "hidden",
                     borderRadius: "10px",
                   }}
                 >
-                  <img
-                    src={imageSrc}
-                    alt={product.name}
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = fallbackImage;
-                    }}
-                    style={{
-                      width: "100%",
-                      height: "200px",
-                      objectFit: "contain",
-                      transition: "transform 0.4s ease",
-                      cursor: "pointer",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "scale(1.3)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "scale(1)";
-                    }}
-                  />
+                  <div style={{ overflow: "hidden", borderRadius: "10px" }}>
+                    <img
+                      src={product.image || fallbackImage}
+                      alt={product.name}
+                      style={{
+                        width: "100%",
+                        height: "180px",
+                        objectFit: "contain",
+                        transition: "transform 0.4s ease",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.3)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                    />
+                  </div>
                 </div>
 
-                <h3
-                  style={{
-                    marginTop: "15px",
-                    marginBottom: "8px",
-                    fontSize: "20px",
-                    fontWeight: "bold",
-                    color: "#000",
-                  }}
-                >
+                <h2 style={{ marginTop: "15px", color: "black", fontWeight: "bold" }}>
                   {product.name}
-                </h3>
+                </h2>
 
-                <p
-                  style={{
-                    fontSize: "14px",
-                    color: "#555",
-                    minHeight: "40px",
-                  }}
-                >
+                <p style={{ fontSize: "14px", color: "black" }}>
                   {product.description}
                 </p>
 
@@ -152,27 +121,27 @@ export default function ProductsPage() {
                     alignItems: "center",
                   }}
                 >
-                  <span
-                    style={{
-                      fontWeight: "bold",
-                      fontSize: "18px",
-                      color: "#000",
-                    }}
-                  >
+                  <span style={{ fontWeight: "bold" }}>
                     ₹{product.price}
                   </span>
 
                   <button
-                    onClick={() => handleBuyNow(product)}
+                    onClick={handleBuyNow}
                     style={{
                       backgroundColor: "#007bff",
                       color: "#fff",
                       border: "none",
-                      padding: "8px 14px",
+                      padding: "10px 16px",
                       borderRadius: "6px",
                       cursor: "pointer",
-                      fontSize: "14px",
+                      transition: "0.3s",
                     }}
+                    onMouseEnter={(e) =>
+                      (e.target.style.backgroundColor = "#0056b3")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.target.style.backgroundColor = "#007bff")
+                    }
                   >
                     Buy Now
                   </button>

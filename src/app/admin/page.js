@@ -1,10 +1,6 @@
-"use client"
-export default function page(){
-    return(
-        <div>
-            <h1>
-                this is a home page 
-            </h1>
-        </div>
-    )
+import { redirect } from "next/navigation";
+
+export default function AdminPage() {
+    redirect("/admin/login");
+    return null;
 }

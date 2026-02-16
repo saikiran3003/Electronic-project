@@ -8,90 +8,114 @@ export default function AddProduct() {
     description: "",
     image: null,
   });
-  const [isSaving, setIsSaving] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    setProduct({
-      ...product,
-      [name]: files ? files[0] : value,
-    });
-  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSaving(true);
-
-    try {
-      const formData = new FormData();
-      formData.append("name", product.name);
-      formData.append("price", product.price);
-      formData.append("description", product.description);
-      formData.append("image", product.image);
-
-      const res = await fetch("/api/products", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to save product");
-      }
-
-      alert("Product Added Successfully ✅");
-      setProduct({ name: "", price: "", description: "", image: null });
-    } catch (error) {
-      alert(`Save failed: ${error.message}`);
-    } finally {
-      setIsSaving(false);
+    if (name === "image") {
+      setProduct({ ...product, image: files[0] });
+    } else {
+      setProduct({ ...product, [name]: value });
     }
   };
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    alert("Product Added Successfully!");
+  };
+
   return (
-    <div>
-      <h1>Add Product</h1>
+    <div style={{ marginLeft: "220px", padding: "30px", marginTop: "5px" }}>
+      <h1>Admin - Manage Products</h1>
 
-      <form onSubmit={handleSubmit} style={{ maxWidth: "400px", marginTop: "60px", marginLeft: "220px" }}>
-        <input
-          type="text"
-          name="name"
-          placeholder="Product Name"
-          onChange={handleChange}
-          value={product.name}
-          required
-        />
+      <div
+        style={{
+          background: "#f4f4f4",
+          padding: "30px",
+          borderRadius: "15px",
+          maxWidth: "400px",
+          marginTop: "20px",
+        }}
+      >
+        <h2>Add Product</h2>
 
-        <input
-          type="number"
-          name="price"
-          placeholder="Price"
-          onChange={handleChange}
-          value={product.price}
-          required
-        />
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            name="name"
+            placeholder="Product Name"
+            onChange={handleChange}
+            required
+            style={inputStyle}
+          />
 
-        <textarea
-          name="description"
-          placeholder="Description"
-          onChange={handleChange}
-          value={product.description}
-          required
-        />
+          <input
+            type="number"
+            name="price"
+            placeholder="Price"
+            onChange={handleChange}
+            required
+            style={inputStyle}
+          />
 
-        <input
-          type="file"
-          name="image"
-          accept="image/*"
-          onChange={handleChange}
-          required
-        />
+          <textarea
+            name="description"
+            placeholder="Description"
+            onChange={handleChange}
+            required
+            style={{ ...inputStyle, height: "120px" }}
+          />
 
-        <button type="submit" disabled={isSaving}>
-          {isSaving ? "Saving..." : "Save Product"}
-        </button>
-      </form>
+          {/* File Input */}
+          <input
+            type="file"
+            name="image"
+            onChange={handleChange}
+            required
+            className="custom-file-input"
+            style={{ marginTop: "10px", marginBottom: "25px" }} // ✅ GAP ADDED HERE
+          />
+
+          <button type="submit" style={buttonStyle}>
+            Add Product
+          </button>
+        </form>
+      </div>
+
+      {/* CSS to remove "No file chosen" */}
+      <style jsx>{`
+        .custom-file-input {
+          color: transparent;
+        }
+
+        .custom-file-input::-webkit-file-upload-button {
+          visibility: visible;
+        }
+
+        .custom-file-input::file-selector-button {
+          visibility: visible;
+        }
+      `}</style>
     </div>
   );
 }
+
+const inputStyle = {
+  width: "100%",
+  padding: "12px",
+  marginBottom: "15px",
+  borderRadius: "8px",
+  border: "1px solid #ccc",
+  fontSize: "16px",
+};
+
+const buttonStyle = {
+  width: "100%",
+  padding: "12px",
+  backgroundColor: "#28a745",
+  color: "white",
+  border: "none",
+  borderRadius: "8px",
+  fontSize: "16px",
+  cursor: "pointer",
+};

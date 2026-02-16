@@ -1,19 +1,27 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import AdminNavbar from "../components/admin/AdminNavbar";
 import Sidebar from "../components/admin/Sidebar";
-import "../globals.css";
 
 export default function AdminLayout({ children }) {
+  const pathname = usePathname();
+  const isLoginPage = pathname === "/admin/login";
+
+  // If it's the login page, render only the children
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
+
   return (
-    <html>
-      <body>
-        <AdminNavbar />
-        <div style={{ display: "flex" }}>
-          <Sidebar />
-          <main style={{ padding: 20, flex: 1 }}>
-            {children}
-          </main>
-        </div>
-      </body>
-    </html>
+    <>
+      <AdminNavbar />
+      <div style={{ display: "flex" }}>
+        <Sidebar />
+        <main style={{ padding: 20, flex: 1, marginTop: "60px", marginLeft: "180px" }}>
+          {children}
+        </main>
+      </div>
+    </>
   );
 }

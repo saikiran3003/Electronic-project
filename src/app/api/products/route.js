@@ -1,5 +1,5 @@
 import dbConnect from "@/lib/mongodb";
-import Product from "@/app/models/Product";
+import Product from "@/models/Product";
 import { v2 as cloudinary } from "cloudinary";
 import { NextResponse } from "next/server";
 
