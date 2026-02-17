@@ -1,3 +1,9 @@
+
+
+
+
+
+
 "use client";
 import { useState } from "react";
 
@@ -19,18 +25,40 @@ export default function AddProduct() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("Product Added Successfully!");
+
+    const formData = new FormData();
+    formData.append("name", product.name);
+    formData.append("price", product.price);
+    formData.append("description", product.description);
+
+    if (product.image) {
+      formData.append("image", product.image);
+    }
+
+    const res = await fetch("/api/products", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert("Product Added Successfully!");
+      setProduct({ name: "", price: "", description: "", image: null });
+    } else {
+      alert("Upload failed: " + (data.error || "Unknown error"));
+    }
   };
 
   return (
-    <div style={{ marginLeft: "220px", padding: "30px", marginTop: "5px" }}>
+    <div style={{ marginLeft: "80px", padding: "30px", marginTop: "-10px", background: "#eef0f4ff", }}>
       <h1>Admin - Manage Products</h1>
 
       <div
         style={{
-          background: "#f4f4f4",
+          background: "#eef0f4ff",
           padding: "30px",
           borderRadius: "15px",
           maxWidth: "400px",
@@ -44,6 +72,7 @@ export default function AddProduct() {
             type="text"
             name="name"
             placeholder="Product Name"
+            value={product.name}
             onChange={handleChange}
             required
             style={inputStyle}
@@ -53,6 +82,7 @@ export default function AddProduct() {
             type="number"
             name="price"
             placeholder="Price"
+            value={product.price}
             onChange={handleChange}
             required
             style={inputStyle}
@@ -61,19 +91,20 @@ export default function AddProduct() {
           <textarea
             name="description"
             placeholder="Description"
+            value={product.description}
             onChange={handleChange}
             required
             style={{ ...inputStyle, height: "120px" }}
           />
 
-          {/* File Input */}
+          {/* SINGLE FILE INPUT */}
           <input
             type="file"
             name="image"
             onChange={handleChange}
             required
             className="custom-file-input"
-            style={{ marginTop: "10px", marginBottom: "25px", color: "black" }} // ✅ GAP ADDED HERE
+            style={{ marginTop: "10px", marginBottom: "25px", color: "black" }}
           />
 
           <button type="submit" style={buttonStyle}>
@@ -82,7 +113,7 @@ export default function AddProduct() {
         </form>
       </div>
 
-      {/* CSS to remove "No file chosen" */}
+      {/* CSS remove "No file chosen" */}
       <style jsx>{`
         .custom-file-input {
           color: transparent;

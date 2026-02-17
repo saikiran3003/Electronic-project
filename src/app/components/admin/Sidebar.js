@@ -5,9 +5,9 @@ export default function Sidebar() {
   return (
     <aside
       style={{
-        width: 180,
+        width: 270,
         minHeight: "100vh",
-        background: "white",
+       background: "#eef0f4ee",
         color: "black",
         padding: "20px",
         position: "fixed",

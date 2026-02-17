@@ -1,10 +1,10 @@
 "use client"
 export default function page() {
     return (
-        <div style={{ marginTop: "60px", marginLeft: "215px" }}>
-            <h2>
+        <div style={{ marginTop: "15px", marginLeft: "80px" }}>
+            <h1>
                 this is a cms page
-            </h2>
+            </h1>
         </div>
     )
 }
