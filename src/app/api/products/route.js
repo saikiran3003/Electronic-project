@@ -44,76 +44,145 @@ export async function GET() {
   }
 }
 
+// export async function POST(req) {
+//   try {
+//     console.log("--- 🚀 PRODUCT UPLOAD START ---");
+
+//     // 1. Verify DB Connection
+//     await dbConnect();
+//     console.log("✅ 1. MongoDB connection verified");
+
+//     // 2. Receive Data
+//     const formData = await req.formData();
+//     const name = formData.get("name");
+//     const price = formData.get("price");
+//     const description = formData.get("description");
+//     const imageFile = formData.get("image");
+
+//     console.log("📦 2. Data received:", { name, price, description, hasImage: !!imageFile });
+
+//     if (!name || !price || !imageFile) {
+//       throw new Error("Missing required fields (name, price, or image)");
+//     }
+
+//     // 3. Cloudinary Upload
+//     console.log("☁️ 3. Starting Cloudinary upload...");
+//     ensureCloudinaryConfigured();
+//     const bytes = await imageFile.arrayBuffer();
+//     const buffer = Buffer.from(bytes);
+
+//     const uploadResult = await new Promise((resolve, reject) => {
+//       const uploadStream = cloudinary.uploader.upload_stream(
+//         { folder: "products" },
+//         (error, result) => {
+//           if (error) {
+//             console.error("❌ Cloudinary Error:", error);
+//             reject(error);
+//           } else {
+//             resolve(result);
+//           }
+//         }
+//       );
+//       uploadStream.end(buffer);
+//     });
+
+//     console.log("✅ 3. Cloudinary success. URL:", uploadResult.secure_url);
+
+//     // 4. MongoDB Insert
+//     console.log("💾 4. Saving to MongoDB Atlas...");
+//     const product = await Product.create({
+//       name,
+//       price: parseFloat(price),
+//       description,
+//       image: uploadResult.secure_url,
+//     });
+
+//     console.log("✅ 4. MongoDB success! Product ID:", product._id);
+//     console.log("--- ✨ PRODUCT UPLOAD COMPLETE ---");
+
+//     return NextResponse.json({
+//       success: true,
+//       message: "Product added successfully",
+//       product
+//     });
+
+//   } catch (error) {
+//     console.error("❌ CRITICAL ERROR:", error.message);
+//     return NextResponse.json(
+//       { success: false, error: error.message },
+//       { status: 500 }
+//     );
+//   }
+// }
+
 export async function POST(req) {
   try {
     console.log("--- 🚀 PRODUCT UPLOAD START ---");
 
-    // 1. Verify DB Connection
     await dbConnect();
-    console.log("✅ 1. MongoDB connection verified");
 
-    // 2. Receive Data
     const formData = await req.formData();
+
     const name = formData.get("name");
     const price = formData.get("price");
     const description = formData.get("description");
-    const imageFile = formData.get("image");
 
-    console.log("📦 2. Data received:", { name, price, description, hasImage: !!imageFile });
+    // ✅ MULTIPLE FILES
+    const imageFiles = formData.getAll("images");
 
-    if (!name || !price || !imageFile) {
-      throw new Error("Missing required fields (name, price, or image)");
+    if (!name || !price || imageFiles.length === 0) {
+      throw new Error("Missing required fields");
     }
 
-    // 3. Cloudinary Upload
-    console.log("☁️ 3. Starting Cloudinary upload...");
     ensureCloudinaryConfigured();
-    const bytes = await imageFile.arrayBuffer();
-    const buffer = Buffer.from(bytes);
 
-    const uploadResult = await new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        { folder: "products" },
-        (error, result) => {
-          if (error) {
-            console.error("❌ Cloudinary Error:", error);
-            reject(error);
-          } else {
-            resolve(result);
+    const uploadedImages = [];
+
+    // 🔥 upload each image to cloudinary
+    for (const file of imageFiles) {
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      const uploadResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "products" },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
           }
-        }
-      );
-      uploadStream.end(buffer);
-    });
+        );
+        stream.end(buffer);
+      });
 
-    console.log("✅ 3. Cloudinary success. URL:", uploadResult.secure_url);
+      uploadedImages.push(uploadResult.secure_url);
+    }
 
-    // 4. MongoDB Insert
-    console.log("💾 4. Saving to MongoDB Atlas...");
+    console.log("☁️ Uploaded images:", uploadedImages.length);
+
+    // ✅ save array in DB
     const product = await Product.create({
       name,
       price: parseFloat(price),
       description,
-      image: uploadResult.secure_url,
+      images: uploadedImages, // ⭐ IMPORTANT
     });
 
-    console.log("✅ 4. MongoDB success! Product ID:", product._id);
-    console.log("--- ✨ PRODUCT UPLOAD COMPLETE ---");
+    console.log("✅ MongoDB saved:", product._id);
 
     return NextResponse.json({
       success: true,
-      message: "Product added successfully",
-      product
+      product,
     });
 
   } catch (error) {
-    console.error("❌ CRITICAL ERROR:", error.message);
+    console.error("❌ ERROR:", error.message);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
     );
   }
 }
+
 export async function PUT(req) {
   try {
     await dbConnect();
