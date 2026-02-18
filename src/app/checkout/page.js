@@ -399,12 +399,12 @@ export default function CheckoutPage() {
                         />
                         <div>
                             <h3>{product.name}</h3>
-                            <p style={{ color: "#555" }}>{product.description}</p>
+                            <p style={{ color: "#000000ff" }}>{product.description}</p>
                             <h2 style={{ color: "#2563eb" }}>₹{product.price}</h2>
                         </div>
                     </div>
 
-                    <h3 style={{ marginTop: "30px" }}>Select UPI Method</h3>
+                    <h3 style={{ marginTop: "30px",color: "#070606ff" }}>Select UPI Method</h3>
 
                     <div style={paymentBox} onClick={() => openPinScreen("Google Pay")}>
                         <img src="/assets/images/gpay.png" style={logoStyle} />
