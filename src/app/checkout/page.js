@@ -477,6 +477,7 @@ const container = {
     fontFamily: "Arial",
     background: "#f5f5f5",
     minHeight: "100vh",
+    color: "#070606ff"
 };
 
 const title = {
