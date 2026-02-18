@@ -310,18 +310,18 @@ export default function ProductsPage() {
       {/* HEADER */}
       <div style={{ marginBottom: "40px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "15px" }}>
         <div>
-          <h1 style={{ fontSize: "28px", fontWeight: "700" }}>Our Products</h1>
+          <h1 style={{ fontSize: "28px", fontWeight: "700",color: "#070606ff" }}>Our Products</h1>
           {userName && <p style={{ color: "#007bff" }}>Welcome, {userName}</p>}
         </div>
 
         {/* SEARCH + FILTER */}
-        <div style={{ display: "flex", gap: "15px" }}>
+        <div style={{ display: "flex", gap: "15px", color: "#000000ff" }}>
           <input
             type="text"
             placeholder="Search products..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ width: "250px", padding: "10px 14px", borderRadius: "12px", border: "2px solid #111", outline: "none" }}
+            style={{ width: "250px", padding: "10px 14px", borderRadius: "12px", border: "2px solid #111", outline: "none", }}
           />
 
           <select
@@ -343,7 +343,7 @@ export default function ProductsPage() {
       {status === "ready" && (
         <>
           {filteredProducts.length === 0 ? (
-            <p style={{ color: "gray" }}>No products found</p>
+            <p style={{ color: "black" }}>No products found</p>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, 300px)", gap: "30px", justifyContent: "center" }}>
               {filteredProducts.map((product) => {
@@ -353,7 +353,7 @@ export default function ProductsPage() {
                     : fallbackImage;
 
                 return (
-                  <div key={product._id} style={{ width: "300px", background: "#fff", padding: "20px", borderRadius: "14px", boxShadow: "0 6px 16px rgba(0,0,0,0.08)", transition: "0.3s" }}>
+                  <div key={product._id} style={{ width: "300px", color: "#070606ff",background: "#fff", padding: "20px", borderRadius: "14px", boxShadow: "0 6px 16px rgba(0,0,0,0.08)", transition: "0.3s" }}>
                     {/* IMAGE */}
                     <div style={{ overflow: "hidden", borderRadius: "12px" }}>
                       <img
@@ -366,11 +366,11 @@ export default function ProductsPage() {
                       />
                     </div>
 
-                    <h2 style={{ marginTop: "16px" }}>{product.name}</h2>
-                    <p style={{ fontSize: "14px", color: "#555" }}>{product.description}</p>
+                    <h2 style={{ marginTop: "16px",color: "#070606ff"}}>{product.name}</h2>
+                    <p style={{ fontSize: "14px", color: "#070606ff" }}>{product.description}</p>
 
                     <div style={{ marginTop: "18px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontWeight: "700" }}>₹{product.price}</span>
+                      <span style={{ fontWeight: "700", color: "#070606ff" }}>₹{product.price}</span>
 
                       <button
                         onClick={() => handleBuyNow(product)}

@@ -76,23 +76,29 @@ export async function POST(req) {
     const name = formData.get("name");
     const price = formData.get("price");
     const description = formData.get("description");
-    const imageFile = formData.get("image");
+    const imageFiles = formData.getAll("images"); // Get all images
 
-    if (!name || !price || !imageFile) {
+    if (!name || !price || imageFiles.length === 0) {
       return NextResponse.json(
-        { success: false, error: "Missing required fields (name, price, or image)" },
+        { success: false, error: "Missing required fields (name, price, or images)" },
         { status: 400 }
       );
     }
 
-    const imageUrl = await uploadFileToCloudinary(imageFile);
+    const imageUrls = [];
+    for (const file of imageFiles) {
+      if (file && file instanceof File) {
+        const url = await uploadFileToCloudinary(file);
+        imageUrls.push(url);
+      }
+    }
 
     const product = await Product.create({
       name,
       price,
       description,
-      image: imageUrl,
-      images: [imageUrl] // Keep images array as fallback with 1 item
+      image: imageUrls[0], // First image is main
+      images: imageUrls,   // Store all in gallery
     });
 
     return NextResponse.json({
@@ -114,9 +120,8 @@ export async function PUT(req) {
 
     const contentType = req.headers.get("content-type") || "";
 
-    // Handle JSON update (no new image)
     if (contentType.includes("application/json")) {
-      const { _id, name, price, description } = await req.json();
+      const { _id, name, price, description, images, image } = await req.json();
 
       if (!_id) {
         return NextResponse.json(
@@ -125,9 +130,13 @@ export async function PUT(req) {
         );
       }
 
+      const updatePayload = { name, price, description };
+      if (images) updatePayload.images = images;
+      if (image) updatePayload.image = image;
+
       const updatedProduct = await Product.findByIdAndUpdate(
         _id,
-        { name, price, description },
+        updatePayload,
         { new: true }
       );
 
@@ -141,13 +150,14 @@ export async function PUT(req) {
       return NextResponse.json({ success: true, product: updatedProduct });
     }
 
-    // Handle Multipart update (possibly with new image)
+    // Handle Multipart update
     const formData = await req.formData();
     const _id = formData.get("_id");
     const name = formData.get("name");
     const price = formData.get("price");
     const description = formData.get("description");
-    const imageFile = formData.get("image");
+    const existingImages = formData.getAll("existingImages"); // Get already present URLs
+    const imageFiles = formData.getAll("images"); // Get new files
 
     if (!_id) {
       return NextResponse.json(
@@ -158,10 +168,22 @@ export async function PUT(req) {
 
     const updatePayload = { name, price, description };
 
-    if (imageFile && imageFile instanceof File) {
-      const imageUrl = await uploadFileToCloudinary(imageFile);
-      updatePayload.image = imageUrl;
-      updatePayload.images = [imageUrl];
+    // Merge Existing + New Uploads
+    if (imageFiles.length > 0 || existingImages.length > 0) {
+      const newUrls = [];
+      for (const file of imageFiles) {
+        if (file && file instanceof File) {
+          const url = await uploadFileToCloudinary(file);
+          newUrls.push(url);
+        }
+      }
+
+      const allImages = [...existingImages, ...newUrls];
+
+      if (allImages.length > 0) {
+        updatePayload.image = allImages[0]; // First in sequence is main
+        updatePayload.images = allImages;
+      }
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(_id, updatePayload, {

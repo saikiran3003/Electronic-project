@@ -345,9 +345,11 @@ export default function AdminProducts() {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
-  const [imageFile, setImageFile] = useState(null);
+  const [galleryFiles, setGalleryFiles] = useState([]); // Array of File objects
+  const [existingImages, setExistingImages] = useState([]); // URLs of existing images for edit
 
   const formRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const fallbackImage = "/assets/images/tvimage.jpg";
 
@@ -373,60 +375,13 @@ export default function AdminProducts() {
   // =========================
   // ADD / UPDATE PRODUCT
   // =========================
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-
-  //   try {
-  //     let res;
-
-  //     if (editingId) {
-  //       res = await fetch("/api/products", {
-  //         method: "PUT",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({
-  //           _id: editingId,
-  //           name,
-  //           price,
-  //           description,
-  //         }),
-  //       });
-  //     } else {
-  //       const formData = new FormData();
-  //       formData.append("name", name);
-  //       formData.append("price", price);
-  //       formData.append("description", description);
-  //       formData.append("image", imageFile);
-
-  //       res = await fetch("/api/products", {
-  //         method: "POST",
-  //         body: formData,
-  //       });
-  //     }
-
-  //     const data = await res.json();
-
-  //     if (data.success) {
-  //       alert(
-  //         editingId
-  //           ? "Product updated successfully ✅"
-  //           : "Product added successfully ✅"
-  //       );
-  //       resetForm();
-  //       fetchProducts();
-  //     } else {
-  //       alert(data.message || "Operation failed ❌");
-  //     }
-  //   } catch (error) {
-  //     console.error(error);
-  //     alert("Something went wrong ❌");
-  //   }
-  // };
-
   const handleEdit = (product) => {
     setEditingId(product._id);
     setName(product.name);
     setPrice(product.price);
     setDescription(product.description);
+    setExistingImages(product.images || [product.image]);
+    setGalleryFiles([]); // Clear new file selection
 
     setTimeout(() => {
       formRef.current?.scrollIntoView({
@@ -458,6 +413,7 @@ export default function AdminProducts() {
       alert("Something went wrong ❌");
     }
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -471,14 +427,22 @@ export default function AdminProducts() {
       if (editingId) {
         formData.append("_id", editingId);
 
-        // If imageFile is present, we use multipart, otherwise we can use JSON for better speed
-        if (imageFile) {
-          formData.append("image", imageFile);
+        // If new galleryFiles are present, upload them
+        if (galleryFiles.length > 0) {
+          // Send existing images so API can append new ones after them
+          existingImages.forEach((img) => {
+            formData.append("existingImages", img);
+          });
+
+          galleryFiles.forEach((file) => {
+            formData.append("images", file); // Consistent field name 'images'
+          });
           res = await fetch("/api/products", {
             method: "PUT",
             body: formData,
           });
         } else {
+          // JSON update if no new images
           res = await fetch("/api/products", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -487,15 +451,20 @@ export default function AdminProducts() {
               name,
               price,
               description,
+              images: existingImages, // Keep current gallery if no new uploads
+              image: existingImages[0]
             }),
           });
         }
       } else {
-        if (!imageFile) {
-          alert("Please select an image ❌");
+        // ADD NEW
+        if (galleryFiles.length === 0) {
+          alert("Please select at least one image ❌");
           return;
         }
-        formData.append("image", imageFile);
+        galleryFiles.forEach((file) => {
+          formData.append("images", file);
+        });
         res = await fetch("/api/products", {
           method: "POST",
           body: formData,
@@ -526,7 +495,22 @@ export default function AdminProducts() {
     setName("");
     setPrice("");
     setDescription("");
-    setImageFile(null);
+    setGalleryFiles([]);
+    setExistingImages([]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setGalleryFiles((prev) => [...prev, ...files]);
+  };
+
+  const removeFile = (index) => {
+    setGalleryFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingImage = (index) => {
+    setExistingImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   // =========================
@@ -554,7 +538,7 @@ export default function AdminProducts() {
           padding: "25px",
           borderRadius: "12px",
           boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-          maxWidth: "450px",
+          maxWidth: "500px",
         }}
       >
         <h2 style={{ marginBottom: "15px" }}>
@@ -567,7 +551,7 @@ export default function AdminProducts() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
-          style={{ width: "100%", padding: "10px", marginBottom: "12px" }}
+          style={{ width: "100%", padding: "10px", marginBottom: "12px", borderRadius: "6px", border: "1px solid #ccc" }}
         />
 
         <input
@@ -576,7 +560,7 @@ export default function AdminProducts() {
           value={price}
           onChange={(e) => setPrice(e.target.value)}
           required
-          style={{ width: "100%", padding: "10px", marginBottom: "12px" }}
+          style={{ width: "100%", padding: "10px", marginBottom: "12px", borderRadius: "6px", border: "1px solid #ccc" }}
         />
 
         <textarea
@@ -588,16 +572,55 @@ export default function AdminProducts() {
             padding: "10px",
             marginBottom: "12px",
             minHeight: "80px",
+            borderRadius: "6px",
+            border: "1px solid #ccc"
           }}
         />
 
-        <input
-          type="file"
-          onChange={(e) => setImageFile(e.target.files[0])}
-          required={!editingId}
-          className="custom-file-input"
-          style={{ marginBottom: "15px", color: "black" }}
-        />
+        {/* IMAGE UPLOAD SECTION */}
+        <div style={{ marginBottom: "15px" }}>
+          <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>Images</label>
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "10px" }}>
+            {/* Existing Images (Edit mode) */}
+            {existingImages.map((img, idx) => (
+              <div key={`exist-${idx}`} style={{ position: "relative" }}>
+                <img src={img} style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "6px", border: "1px solid #ddd" }} />
+                <button
+                  type="button"
+                  onClick={() => removeExistingImage(idx)}
+                  style={{ position: "absolute", top: "-5px", right: "-5px", background: "red", color: "white", borderRadius: "50%", border: "none", width: "18px", height: "18px", fontSize: "10px", cursor: "pointer" }}
+                >✕</button>
+              </div>
+            ))}
+
+            {/* New Files */}
+            {galleryFiles.map((file, idx) => (
+              <div key={`new-${idx}`} style={{ position: "relative", background: "#e9ecef", width: "60px", height: "60px", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", textAlign: "center", border: "1px dashed #adb5bd" }}>
+                {file.name.substring(0, 10)}...
+                <button
+                  type="button"
+                  onClick={() => removeFile(idx)}
+                  style={{ position: "absolute", top: "-5px", right: "-5px", background: "#6c757d", color: "white", borderRadius: "50%", border: "none", width: "18px", height: "18px", fontSize: "10px", cursor: "pointer" }}
+                >✕</button>
+              </div>
+            ))}
+
+            {/* Add Image Option */}
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              style={{ width: "60px", height: "60px", border: "2px dashed #007bff", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#007bff", fontSize: "20px" }}
+            >+</div>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            onChange={handleFileChange}
+            style={{ display: "none" }}
+          />
+        </div>
 
         <div style={{ display: "flex", gap: "10px" }}>
           <button
@@ -605,13 +628,14 @@ export default function AdminProducts() {
             style={{
               background: editingId ? "#ff9800" : "#28a745",
               color: "#fff",
-              padding: "10px 20px",
+              padding: "12px 25px",
               border: "none",
               borderRadius: "6px",
               cursor: "pointer",
+              fontWeight: "600"
             }}
           >
-            {editingId ? "Update Product" : "Add Product"}
+            {editingId ? "Update Product" : "Save Product"}
           </button>
 
           {editingId && (
@@ -621,13 +645,13 @@ export default function AdminProducts() {
               style={{
                 background: "#1976d2",
                 color: "#fff",
-                padding: "10px 20px",
+                padding: "12px 25px",
                 border: "none",
                 borderRadius: "6px",
                 cursor: "pointer",
               }}
             >
-              Add Product
+              Add New Product
             </button>
           )}
         </div>
@@ -646,23 +670,37 @@ export default function AdminProducts() {
             key={product._id}
             style={{
               background: "#fff",
-              padding: "18px",
-              borderRadius: "12px",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              padding: "20px",
+              borderRadius: "15px",
+              boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
+              display: "flex",
+              flexDirection: "column",
+              height: "440px", // Fixed uniform height
+              transition: "transform 0.3s ease",
             }}
           >
-            <div style={{ overflow: "hidden", borderRadius: "10px" }}>
+            {/* Image Container with fixed height */}
+            <div style={{
+              height: "180px",
+              width: "100%",
+              overflow: "hidden",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "#fafafa"
+            }}>
               <img
                 src={product.image || fallbackImage}
                 alt={product.name}
                 style={{
-                  width: "100%",
-                  height: "180px",
+                  maxWidth: "100%",
+                  maxHeight: "100%",
                   objectFit: "contain",
                   transition: "transform 0.4s",
                 }}
                 onMouseEnter={(e) =>
-                  (e.currentTarget.style.transform = "scale(1.3)")
+                  (e.currentTarget.style.transform = "scale(1.1)")
                 }
                 onMouseLeave={(e) =>
                   (e.currentTarget.style.transform = "scale(1)")
@@ -670,23 +708,51 @@ export default function AdminProducts() {
               />
             </div>
 
-            <h3 style={{ marginTop: "12px" }}>{product.name}</h3>
-            <p style={{ fontSize: "14px", color: "#555" }}>
-              {product.description}
-            </p>
-            <strong style={{ fontSize: "16px" }}>₹{product.price}</strong>
+            {/* Product info with flexible height and full visibility for title */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", marginTop: "15px", overflow: "hidden" }}>
+              <h3 style={{
+                fontSize: "17px",
+                fontWeight: "700",
+                marginBottom: "8px",
+                lineHeight: "1.3",
+                color: "#333"
+                // Removed height and clamping to show full name
+              }}>
+                {product.name}
+              </h3>
 
-            <div style={{ marginTop: "12px" }}>
+              <p style={{
+                fontSize: "14px",
+                color: "#666",
+                lineHeight: "1.4",
+                display: "-webkit-box",
+                WebkitLineClamp: 3, // Allow a bit more for description but keep it clamped to avoid overflow
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+                marginBottom: "10px"
+              }}>
+                {product.description}
+              </p>
+
+              <div style={{ marginTop: "auto" }}>
+                <strong style={{ fontSize: "22px", color: "#2563eb" }}>₹{product.price}</strong>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ marginTop: "15px", display: "flex", gap: "10px" }}>
               <button
                 onClick={() => handleEdit(product)}
                 style={{
+                  flex: 1,
                   background: "#ff9800",
                   color: "#fff",
                   border: "none",
-                  padding: "6px 12px",
-                  borderRadius: "5px",
-                  marginRight: "10px",
+                  padding: "10px",
+                  borderRadius: "8px",
                   cursor: "pointer",
+                  fontWeight: "600",
+                  fontSize: "14px"
                 }}
               >
                 Edit
@@ -695,12 +761,15 @@ export default function AdminProducts() {
               <button
                 onClick={() => handleDelete(product._id)}
                 style={{
-                  background: "#e53935",
+                  flex: 1,
+                  background: "#ef4444",
                   color: "#fff",
                   border: "none",
-                  padding: "6px 12px",
-                  borderRadius: "5px",
+                  padding: "10px",
+                  borderRadius: "8px",
                   cursor: "pointer",
+                  fontWeight: "600",
+                  fontSize: "14px"
                 }}
               >
                 Delete
@@ -709,21 +778,6 @@ export default function AdminProducts() {
           </div>
         ))}
       </div>
-
-      {/* ✅ REMOVE "No file chosen" TEXT */}
-      <style jsx>{`
-        .custom-file-input {
-          color: transparent;
-        }
-
-        .custom-file-input::-webkit-file-upload-button {
-          visibility: visible;
-        }
-
-        .custom-file-input::file-selector-button {
-          visibility: visible;
-        }
-      `}</style>
     </div>
   );
 }
