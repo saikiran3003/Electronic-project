@@ -125,7 +125,7 @@ export default function ProductDetails() {
 
         {/* RIGHT SIDE DETAILS */}
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: "30px", fontWeight: "600" }}>{product.name}</h1>
+          <h1 style={{ fontSize: "30px", fontWeight: "600",color: "#000000ff" }}>{product.name}</h1>
 
           <h2 style={{ color: "#000000ff", marginTop: "20px", fontSize: "26px" }}>
             ₹{product.price}
